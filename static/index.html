@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>RL Chess Engine</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+    <script src="/static/config.js"></script>
+    <script src="https://accounts.google.com/gsi/client" async></script>
+  </head>
+  <body>
+    <div id="welcomeOverlay" class="welcome-overlay" role="dialog" aria-modal="true" aria-label="RL Chess sign in">
+      <div class="welcome-card">
+        <div class="welcome-split">
+          <section class="welcome-info">
+            <div class="brand-mark">AI</div>
+            <p class="eyebrow">WELCOME TO</p>
+            <h1>RL Chess Assist</h1>
+            <p>Play against a reinforcement-learned chess engine and review every decision after the game.</p>
+            <div class="welcome-details"><span>Alpha-beta search</span><span>NNUE evaluation</span><span>TD-leaf trained</span></div>
+            <div class="welcome-facts">
+              <span>Python engine</span>
+              <span>Approx. 2000 Elo</span>
+              <span>Incremental accumulators</span>
+              <span>NumPy inference</span>
+            </div>
+          </section>
+          <section class="welcome-login">
+            <p class="eyebrow">PLAYER ACCESS</p>
+            <h2 id="welcomeAccessTitle">Save your rating</h2>
+            <p id="welcomeAccessDescription">Sign in with Google to keep your personal Elo across games.</p>
+            <div class="google-slot">
+              <div id="googleButton"></div>
+              <button id="googleFallback" class="manual-google-button" type="button">Sign in with Google</button>
+            </div>
+            <div class="welcome-divider"><span>or</span></div>
+            <button id="guestEntry" class="guest-button" type="button">Enter as Guest</button>
+            <small id="loginStatus">Guest play is available. Sign in with Google to save your Elo.</small>
+          </section>
+        </div>
+      </div>
+    </div>
+    <main class="shell">
+      <section class="board-zone">
+        <div class="engine-chip">
+          <span class="pulse"></span>
+          <span id="engineState">RL Chess Python Engine · approx. 2000 Elo</span>
+        </div>
+        <div class="board-wrap">
+          <div class="board-tools" aria-label="Board history controls">
+            <button id="redoButton" class="tool-button" title="Redo last undone turn">Redo</button>
+            <button id="undoButton" class="tool-button" title="Undo last player turn">Undo</button>
+          </div>
+          <div id="board" class="board" aria-label="Chess board"></div>
+          <div id="gameResult" class="game-result hidden" role="status" aria-live="polite">
+            <strong id="gameResultTitle">Game over</strong>
+            <span id="gameResultDetail"></span>
+          </div>
+        </div>
+        <div class="quick-move">
+          <input id="uciInput" placeholder="type move: e2e4" maxlength="5" />
+          <button id="sendMove" title="Play typed move">Play</button>
+          <button id="flipBoard" class="ghost-button" title="Flip board">Flip</button>
+        </div>
+      </section>
+
+      <aside class="sidebar">
+        <header class="brandbar">
+          <div class="brand-mark">AI</div>
+          <div>
+            <h1>RL Chess Engine</h1>
+            <p>Python alpha-beta + NNUE · approx. 2000 Elo</p>
+          </div>
+        </header>
+
+        <section id="playView" class="view active">
+          <form id="newGameForm" class="control-grid">
+            <label>
+              Player
+              <input id="playerName" value="Guest" />
+            </label>
+            <label>
+              Color
+              <select id="playerColor">
+                <option value="white">White</option>
+                <option value="black">Black</option>
+              </select>
+            </label>
+            <button type="submit">Start Game</button>
+          </form>
+
+          <section id="loginPanel" class="login-panel">
+            <div>
+              <strong>Player account</strong>
+              <small id="accountStatus">Sign in with Google to save your Elo, or continue as a guest.</small>
+            </div>
+            <div class="account-google-slot">
+              <div id="accountGoogleButton"></div>
+              <button id="accountGoogleFallback" class="manual-google-button" type="button">Sign in with Google</button>
+            </div>
+          </section>
+
+          <section class="settings-panel">
+            <div class="preset-row" role="group" aria-label="Difficulty">
+              <button type="button" class="preset-button" data-preset="easy">Easy</button>
+              <button type="button" class="preset-button active" data-preset="medium">Medium</button>
+              <button type="button" class="preset-button" data-preset="hard">Hard</button>
+            </div>
+            <label>
+              Search depth
+              <span id="depthValue">5</span>
+              <input id="searchDepth" type="range" min="1" max="8" step="1" value="5" />
+            </label>
+            <label>
+              Move time budget
+              <span id="timeValue">2.0s</span>
+              <input id="moveTime" type="range" min="0.2" max="5" step="0.1" value="2.0" />
+            </label>
+            <p id="searchFloor" class="setting-note">
+              Python alpha-beta with iterative deepening, quiescence, TT, and incremental NNUE accumulators.
+            </p>
+          </section>
+
+          <div class="hud">
+            <div class="player-card">
+              <span>Opponent</span>
+              <strong>RL Chess Engine</strong>
+              <small id="engineMeta">NNUE HalfKP · accumulators · NumPy inference · Zobrist TT</small>
+            </div>
+            <div class="player-card active-player">
+              <span>You</span>
+              <strong id="playerLabel">Guest</strong>
+              <small id="status">Start a game.</small>
+              <small id="playerElo">Rating not established</small>
+            </div>
+          </div>
+
+          <section class="panel">
+            <div class="panel-title">
+              <h2>Search Info</h2>
+              <span id="turnLabel">--</span>
+            </div>
+            <div id="analysis" class="analysis"></div>
+          </section>
+
+          <section class="panel terminal">
+            <div class="panel-title">
+              <h2>RL Chess Assistant</h2>
+              <span>Chat</span>
+            </div>
+            <div id="chatLog" class="chat-log">
+              <div class="chat-message assistant">Ask me about the current position or your game.</div>
+            </div>
+            <div class="chat-entry">
+              <input id="chatInput" placeholder="Ask about this position..." />
+              <button id="chatSend" class="mini-button">Send</button>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-title">
+              <h2>Match Notation</h2>
+              <span id="moveCount">0 moves</span>
+            </div>
+            <ol id="history" class="history"></ol>
+          </section>
+        </section>
+
+        <section id="reviewView" class="view">
+          <div class="review-hero">
+            <button id="backToGame" class="ghost-button">Back</button>
+            <div>
+              <span>Game Report</span>
+              <strong id="accuracy">--%</strong>
+              <p id="verdict">Finish a game to unlock analysis.</p>
+            </div>
+          </div>
+          <section class="panel personalization-panel">
+            <div class="panel-title">
+              <h2>Personalized Coaching</h2>
+              <span id="personalizationGames">This match</span>
+            </div>
+            <p id="personalizationSummary" class="personalization-summary"></p>
+            <div id="settingRecommendation" class="setting-recommendation"></div>
+            <div id="personalizationPatterns" class="personalization-patterns"></div>
+          </section>
+          <div id="scoreBars" class="score-bars"></div>
+          <div class="panel">
+            <div class="panel-title">
+              <h2>Move Quality</h2>
+              <span id="resultLabel">--</span>
+            </div>
+            <div id="reviewMoves" class="review-moves"></div>
+          </div>
+          <div class="panel">
+            <div class="panel-title">
+              <h2>PGN</h2>
+              <span>This session</span>
+            </div>
+            <pre id="pgnBox" class="pgn-box"></pre>
+          </div>
+        </section>
+
+        <footer class="actions">
+          <button id="newGameFooter" class="action-button">Start Game</button>
+          <button id="resignButton" class="action-button">Resign</button>
+          <button id="analyzeButton" class="action-button analyze locked" disabled>Analyze</button>
+        </footer>
+      </aside>
+    </main>
+    <script src="/static/app.js"></script>
+  </body>
+</html>
