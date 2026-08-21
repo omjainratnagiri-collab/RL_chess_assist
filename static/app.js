@@ -18,6 +18,7 @@ const ACTIVE_GAME_STORAGE_KEY = "rlchess.activeGameId";
 const AUTH_TOKEN_STORAGE_KEY = "rlchess.authToken";
 const AUTH_USER_STORAGE_KEY = "rlchess.authUser";
 const GUEST_MODE_STORAGE_KEY = "rlchess.guestMode";
+const JUST_SIGNED_IN_KEY = "rlchess.justSignedIn";
 const authState = {
   token: localStorage.getItem(AUTH_TOKEN_STORAGE_KEY),
   user: JSON.parse(localStorage.getItem(AUTH_USER_STORAGE_KEY) || "null"),
@@ -29,6 +30,10 @@ const welcomeAccessTitle = document.querySelector("#welcomeAccessTitle");
 const welcomeAccessDescription = document.querySelector("#welcomeAccessDescription");
 function enterChess() {
   welcomeOverlay?.classList.add("hidden");
+}
+if (sessionStorage.getItem(JUST_SIGNED_IN_KEY) === "true") {
+  sessionStorage.removeItem(JUST_SIGNED_IN_KEY);
+  enterChess();
 }
 guestEntry?.addEventListener("click", (event) => {
   event.stopPropagation();
@@ -157,6 +162,7 @@ async function handleGoogleCredential(response) {
     const payload = await postJson("/api/auth/google", { credential: response.credential });
     authState.token = payload.token;
     authState.user = payload.user;
+    sessionStorage.setItem(JUST_SIGNED_IN_KEY, "true");
     localStorage.removeItem(GUEST_MODE_STORAGE_KEY);
     localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, payload.token);
     localStorage.setItem(AUTH_USER_STORAGE_KEY, JSON.stringify(payload.user));
@@ -164,7 +170,7 @@ async function handleGoogleCredential(response) {
     updateLoginStatus();
     enterChess();
   } catch (error) {
-    loginStatus.textContent = error.message;
+    loginStatus.textContent = `Sign-in failed: ${error.message}`;
   }
 }
 
