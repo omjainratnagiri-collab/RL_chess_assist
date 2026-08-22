@@ -697,20 +697,38 @@ async def chat(request: ChatRequest):
     board = game["board"]
     recent = " ".join(item.get("san", item["uci"]) for item in game["history"][-20:]) or "No moves yet"
     context = f"FEN: {board.fen()}\nRecent moves: {recent}\nStatus: {describe_game_status(game)}"
+    model_name = os.getenv("GROQ_MODEL", "qwen/qwen3.6-27b").strip()
+    if model_name in {"llama-3.3-70b-versatile", "openai/gpt-oss-20b"}:
+        model_name = "qwen/qwen3.6-27b"
     body = json.dumps({
-        "model": os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile"),
+        "model": model_name,
         "messages": [
             {"role": "system", "content": "You are RL Chess Assist. Explain chess clearly and briefly. Use only the supplied game position and moves; do not claim engine analysis you did not perform."},
             {"role": "user", "content": f"Game context:\n{context}\n\nPlayer question: {request.message}"},
         ],
         "max_tokens": 300,
     }).encode("utf-8")
-    http_request = urllib.request.Request("https://api.groq.com/openai/v1/chat/completions", data=body, method="POST", headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"})
+    http_request = urllib.request.Request(
+        "https://api.groq.com/openai/v1/chat/completions",
+        data=body,
+        method="POST",
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+            "User-Agent": "RLChessAssist/1.0 (+https://rl-chess-assist-1.onrender.com)",
+        },
+    )
     try:
         with urllib.request.urlopen(http_request, timeout=30) as response:
             data = json.loads(response.read().decode("utf-8"))
-    except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError) as exc:
-        raise HTTPException(502, f"Chatbot request failed: {exc}")
+    except urllib.error.HTTPError as exc:
+        try:
+            raw_body = exc.read().decode("utf-8", errors="replace")
+        except Exception:
+            raw_body = "<could not read response body>"
+        raise HTTPException(502, f"Chatbot request failed: HTTP {exc.code} {exc.reason} - body: {raw_body[:500]}")
+    except (urllib.error.URLError, TimeoutError) as exc:
+        raise HTTPException(502, f"Chatbot connection failed: {exc}")
     choices = data.get("choices", [])
     text = choices[0].get("message", {}).get("content") if choices else None
     return {"text": text or "The chatbot returned no text."}
