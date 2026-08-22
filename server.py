@@ -703,7 +703,7 @@ async def chat(request: ChatRequest):
     body = json.dumps({
         "model": model_name,
         "messages": [
-            {"role": "system", "content": "You are RL Chess Assist. Explain chess clearly and briefly. Use only the supplied game position and moves; do not claim engine analysis you did not perform."},
+            {"role": "system", "content": "You are RL Chess Assist. Explain chess clearly and briefly. Use only the supplied game position and moves; do not claim engine analysis you did not perform.Give reasoning dont give fens for whole match just precise answer."},
             {"role": "user", "content": f"Game context:\n{context}\n\nPlayer question: {request.message}"},
         ],
         "max_tokens": 300,
