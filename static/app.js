@@ -557,6 +557,7 @@ async function resumeSavedGame() {
 
 async function startGame(event) {
   event?.preventDefault();
+  gameResult.classList.add("hidden");
   if (state.gameId && !state.gameOver) {
     statusEl.textContent = "Resign or finish the current game before starting a new one.";
     return;
