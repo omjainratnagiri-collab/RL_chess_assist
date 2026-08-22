@@ -2,7 +2,7 @@
 
 RL Chess is a Python chess engine and browser application that combines supervised learning, reinforcement-learning fine-tuning, NNUE evaluation, and alpha-beta search.
 
-Live demo: add the deployed application URL here after deployment.
+Live demo: https://rl-chess-assist-1.onrender.com
 
 ## Training progression
 
