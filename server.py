@@ -700,11 +700,22 @@ async def chat(request: ChatRequest):
     model_name = os.getenv("GROQ_MODEL", "qwen/qwen3.6-27b").strip()
     if model_name in {"llama-3.3-70b-versatile", "openai/gpt-oss-20b"}:
         model_name = "qwen/qwen3.6-27b"
+    system_prompt = (
+        "You are RL Chess Assist, a friendly chess coach embedded in a chess app. "
+        "You will be given INTERNAL GAME DATA (a FEN string, recent moves, and status) so you understand "
+        "the position - this data is for your reference only. "
+        "Never print, quote, or repeat the FEN string, move-list notation dump, or status code back to the "
+        "player. Do not restate the raw context in your answer. "
+        "Answer in plain, natural chess language (e.g. 'your knight on f3', 'castle kingside'), as if you "
+        "already know the board and are just talking to the player. "
+        "Keep answers clear and brief. Do not claim engine analysis you did not perform."
+    )
     body = json.dumps({
         "model": model_name,
+        "reasoning_effort": "none",
         "messages": [
-            {"role": "system", "content": "You are RL Chess Assist. Explain chess clearly and briefly. Use only the supplied game position and moves; do not claim engine analysis you did not perform.Give reasoning dont give fens for whole match just precise answer."},
-            {"role": "user", "content": f"Game context:\n{context}\n\nPlayer question: {request.message}"},
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": f"[INTERNAL GAME DATA - do not repeat this back]\n{context}\n[END INTERNAL DATA]\n\nPlayer question: {request.message}"},
         ],
         "max_tokens": 300,
     }).encode("utf-8")
@@ -731,4 +742,8 @@ async def chat(request: ChatRequest):
         raise HTTPException(502, f"Chatbot connection failed: {exc}")
     choices = data.get("choices", [])
     text = choices[0].get("message", {}).get("content") if choices else None
+    if text:
+        # Safety net: strip any <think>...</think> block the model might still emit
+        import re
+        text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL).strip()
     return {"text": text or "The chatbot returned no text."}
