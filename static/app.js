@@ -742,5 +742,8 @@ resignButton.disabled = true;
 newGameButton.disabled = false;
 undoButton.disabled = true;
 redoButton.disabled = true;
+gameResultTitle.textContent = "Ready to play";
+gameResultDetail.textContent = "Press Start Game to begin.";
+gameResult.classList.remove("hidden");
 resumeSavedGame();
 setupGoogleLogin();
