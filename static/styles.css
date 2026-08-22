@@ -539,17 +539,17 @@ h2 {
 }
 
 .personalization-panel { display: grid; gap: 12px; }
-.personalization-summary { margin: 0; color: var(--muted); font-size: 13px; }
-.setting-recommendation { padding: 13px; border: 1px solid rgba(99,102,241,.45); border-radius: 8px; background: rgba(99,102,241,.12); }
+.personalization-summary { margin: 0; color: var(--text); font-size: 13px; }
+.setting-recommendation { padding: 13px; border: 1px solid rgba(99,102,241,.6); border-radius: 8px; background: rgba(30,32,46,.9); }
 .setting-recommendation div { display: grid; gap: 5px; }
-.setting-recommendation span { color: #aebed5; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; }
-.setting-recommendation strong { color: white; font-size: 15px; }
-.setting-recommendation small { color: #c8d5e8; line-height: 1.45; }
+.setting-recommendation span { color: #c7d2e6; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; }
+.setting-recommendation strong { color: var(--text); font-size: 15px; }
+.setting-recommendation small { color: var(--text); line-height: 1.45; }
 .personalization-patterns { display: grid; gap: 8px; }
 .personalization-pattern { padding: 11px 13px; border-left: 3px solid var(--warn); border-radius: 6px; background: var(--surface); }
 .personalization-pattern.good { border-left-color: var(--accent-2); }
-.personalization-pattern strong { color: white; font-size: 13px; }
-.personalization-pattern p { margin: 5px 0 0; color: var(--muted); font-size: 12px; line-height: 1.45; }
+.personalization-pattern strong { color: var(--text); font-size: 13px; }
+.personalization-pattern p { margin: 5px 0 0; color: var(--text); font-size: 12px; line-height: 1.45; }
 
 .line {
   display: grid;
