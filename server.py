@@ -70,8 +70,14 @@ async def health():
         backend = database.healthcheck()
     except Exception as exc:
         raise HTTPException(503, "Database connection failed") from exc
-    return {"status": "ok", "database": backend}
-
+    # return {"status": "ok", "database": backend}
+    return {
+        "status": "ok",
+        "database": backend,
+        "google_client_configured": bool(os.getenv("GOOGLE_CLIENT_ID")),
+        "auth_secret_configured": bool(os.getenv("AUTH_SECRET")),
+        "google_client_id_debug": repr(os.getenv("GOOGLE_CLIENT_ID")),  # TEMP - remove after debugging
+    }
 games = {}
 
 DEFAULT_CHECKPOINT_CANDIDATES = [
