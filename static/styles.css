@@ -154,10 +154,10 @@ select {
   place-items: center;
 }
 
-.game-result { position: absolute; inset: 0; z-index: 2; display: grid; place-content: center; gap: 8px; padding: 24px; text-align: center; color: white; background: rgba(8, 13, 24, .78); backdrop-filter: blur(4px); }
+.game-result { position: absolute; inset: 0; z-index: 2; display: grid; place-content: center; gap: 8px; padding: 24px; text-align: center; color: white; background: rgba(8, 13, 24, .78); backdrop-filter: blur(4px); transition: opacity .35s ease, visibility .35s ease; opacity: 1; visibility: visible; }
 .game-result strong { font-size: clamp(1.2rem, 3vw, 2rem); }
 .game-result span { color: #c8d5e8; font-size: .9rem; }
-.game-result.hidden { display: none; }
+.game-result.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
 
 .board {
   display: grid;
