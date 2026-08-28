@@ -11,31 +11,9 @@ from numpy_inference import NumpyValueHead
 
 MATE_SCORE = 2.0                                                      
 DRAW_SCORE = 0.0
-
-                                                                       
-                                                                           
-                                                                           
-                                                                       
-                                                                    
-                                                                     
-                                                                      
-                                                                         
-                                                                    
-                                                                        
-                                                                   
-                                                                          
-                                    
+                                  
 MAX_QUIESCENCE_PLY = 24
-
-                                                                          
-                                                                          
-                                                                   
-                                                                        
-                                                                      
-                                                                     
-                                                                         
-                                                                          
-                                                
+                                   
 TIME_CHECK_NODE_INTERVAL = 1024
 
 TT_EXACT = 0
@@ -83,24 +61,13 @@ class SearchEngine:
         self.nodes = 0
         self._deadline = None                                                                
         self.use_numpy_eval = use_numpy_eval
-        self.numpy_value_head = NumpyValueHead() if use_numpy_eval else None
-                                                                         
-                                                                       
-                                                                        
-                                                                       
-                                                                         
-                                                                      
-                                                                     
+        self.numpy_value_head = NumpyValueHead() if use_numpy_eval else None                                               
         self.use_null_move = use_null_move
         self.use_lmr = use_lmr
         self.sync_weights()
 
     def sync_weights(self):
-        """Call this after any training update to the model -- the
-        accumulator operates on a plain numpy copy of the embedding table,
-        not the live torch parameters, so it needs an explicit refresh.
-        Also re-syncs the numpy value head's weights (see
-        numpy_inference.py) if it's in use."""
+        
         self.weights = self.model.feature_transformer.embedding.weight.detach().cpu().numpy()
         if self.use_numpy_eval:
             self.numpy_value_head.sync(self.model)
@@ -109,19 +76,12 @@ class SearchEngine:
         return AccumulatorPair(self.weights, board=board)
 
     def _check_time(self):
-        """Called from inside negamax/quiescence. Cheap on most calls (just
-        a modulo), only touches the clock every TIME_CHECK_NODE_INTERVAL
-        nodes. Raises SearchTimeout if self._deadline has passed -- this is
-        what actually enforces time_limit DURING a deep/slow iteration,
-        instead of only between iterative-deepening depths."""
+        
         if self._deadline is None:
             return
         if self.nodes % TIME_CHECK_NODE_INTERVAL == 0 and time.time() > self._deadline:
             raise SearchTimeout()
 
-                                                                       
-                     
-                                                                       
 
     def evaluate(self, board, acc):
         if board.is_checkmate():
@@ -138,20 +98,7 @@ class SearchEngine:
             _, value = self.model.forward_from_accumulators(us_vec, them_vec, device=self.device)
         return float(value.item())
 
-                                                                       
-                                                                  
-                                                                          
-                                                                    
-                                                          
-                                                            
-                                                                        
-                                                                         
-                          
-
-                                                                       
-                   
-                                                                       
-
+                                                                      
     def _mvv_lva_score(self, board, move):
         victim = board.piece_at(move.to_square)
         attacker = board.piece_at(move.from_square)
@@ -184,26 +131,14 @@ class SearchEngine:
 
         moves.sort(key=sort_key, reverse=True)
         return moves
-
-                                                                       
-                       
-                                                                       
+                                                               
 
     def quiescence(self, board, acc, alpha, beta, ply, qply=0):
         self.nodes += 1
         self._check_time()
-
-                                                                       
-                                                                        
-                                                                       
-                                                                     
-                                                                      
+                                       
         if board.is_repetition(2) or board.halfmove_clock >= 100:
-            return DRAW_SCORE
-
-                                                                          
-                                                                    
-                                                                       
+            return DRAW_SCORE                                          
                                                      
         if qply >= MAX_QUIESCENCE_PLY:
             return self.evaluate(board, acc)
@@ -227,10 +162,7 @@ class SearchEngine:
             try:
                 score = -self.quiescence(board, acc, -beta, -alpha, ply + 1, qply + 1)
             finally:
-                                                                          
-                                                                         
-                                                                
-                                                              
+                                            
                 board.pop()
                 acc.pop()
 
@@ -240,10 +172,6 @@ class SearchEngine:
                 alpha = score
 
         return alpha
-
-                                                                       
-                                        
-                                                                       
 
     def negamax(self, board, acc, depth, alpha, beta, ply):
         self.nodes += 1
@@ -270,27 +198,7 @@ class SearchEngine:
             return self.quiescence(board, acc, alpha, beta, ply)
 
         in_check_here = board.is_check()
-
-                                   
-                                                                          
-                                                                          
-                                                                      
-                                                                      
-                                
-         
-                                              
-                                                                          
-                                                                 
-                                                                         
-                                                               
-                                                                         
-                                                    
-                                                                         
-                                                                       
-                                                                      
-                                                                      
-                                                                  
-                                                  
+             
         if (self.use_null_move and depth >= 3 and not in_check_here and beta < MATE_SCORE - 1
                 and self._has_non_pawn_material(board, board.turn)):
             R = 2                                                         
@@ -324,18 +232,7 @@ class SearchEngine:
             acc.push(board, move)
             board.push(move)
             try:
-                                                    
-                                                                       
-                                                                             
-                                                                       
-                                                                          
-                                                                         
-                                                                         
-                                                                   
-                                                                         
-                                                                       
-                                                                       
-                                                                 
+                                             
                 use_reduction = (
                     self.use_lmr and depth >= 3 and move_count > 4
                     and not is_capture_or_promo and not gives_check
@@ -347,17 +244,13 @@ class SearchEngine:
                                                                       
                     score = -self.negamax(board, acc, depth - 1 - reduction, -alpha - 1, -alpha, ply + 1)
                     if score > alpha:
-                                                                        
-                                                                         
+                                                      
                                                                       
                         score = -self.negamax(board, acc, depth - 1, -beta, -alpha, ply + 1)
                 else:
                     score = -self.negamax(board, acc, depth - 1, -beta, -alpha, ply + 1)
             finally:
-                                                                         
-                                                                        
-                                                                          
-                                                                          
+                                                     
                 board.pop()
                 acc.pop()
 
@@ -385,37 +278,8 @@ class SearchEngine:
 
         return best_score
 
-                                                                       
-                                       
-                                                                       
-
     def _search_root(self, board, acc, depth, ply=0):
-        """Same shape as negamax(), but specifically for the root move: it
-        tracks the best move found among root moves ALREADY evaluated at
-        this depth as it goes, not just the final result. This is what
-        lets search() below recover a usable move if SearchTimeout fires
-        partway through a depth -- including depth 1 -- instead of needing
-        to either finish the whole depth or return nothing for it.
-
-        Returns (best_move, best_score, completed) where completed is
-        False if this depth was cut short by a timeout. IMPORTANT:
-        best_move is None (not moves[0] or any other placeholder) until at
-        least one move has ACTUALLY finished evaluating -- do not swap
-        this for a non-None fallback. search() below only overwrites its
-        running best_move/best_score when this returns non-None,
-        specifically so an interrupted depth that finished zero moves
-        can't clobber a perfectly good result from the previous, fully
-        completed depth with a meaningless sentinel score (this was a
-        real bug: returning moves[0] paired with the untouched
-        best_score sentinel of -MATE_SCORE-1 = -3.0 let that -3.0 leak
-        out as a reported "score" whenever a depth timed out before its
-        first move finished -- exactly the number that would have gone
-        into TD-Leaf training data as a leaf value if left unfixed).
-        search()'s own final fallback (grab the first legal move if
-        best_move is still None after every depth) is what actually
-        guarantees SOME move is always returned -- this function doesn't
-        need to duplicate that.
-        """
+        
         key = acc.zobrist
         tt_entry = self.tt.get(key)
         tt_move = tt_entry.best_move if tt_entry else None
